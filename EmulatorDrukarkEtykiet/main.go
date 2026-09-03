@@ -183,6 +183,141 @@ func handleIPP(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("========================================")
 }
 
+// func handleGetPrinterAttributes(
+// 	w http.ResponseWriter,
+// 	r *http.Request,
+// 	req *goipp.Message,
+// ) {
+// 	fmt.Println("IPP: Get-Printer-Attributes")
+
+// 	printerURI := getPrinterURI(r)
+
+// 	resp := goipp.NewResponse(
+// 		req.Version,
+// 		goipp.StatusOk,
+// 		req.RequestID,
+// 	)
+
+// 	addOperationAttributes(resp)
+
+// 	resp.Printer.Add(
+// 		goipp.MakeAttribute(
+// 			"printer-uri-supported",
+// 			goipp.TagURI,
+// 			goipp.String(printerURI),
+// 		),
+// 	)
+
+// 	resp.Printer.Add(
+// 		goipp.MakeAttribute(
+// 			"printer-name",
+// 			goipp.TagName,
+// 			goipp.String(printerName),
+// 		),
+// 	)
+
+// 	resp.Printer.Add(
+// 		goipp.MakeAttribute(
+// 			"printer-info",
+// 			goipp.TagText,
+// 			goipp.String("PiKul Virtual Printer"),
+// 		),
+// 	)
+
+// 	resp.Printer.Add(
+// 		goipp.MakeAttribute(
+// 			"printer-location",
+// 			goipp.TagText,
+// 			goipp.String(""),
+// 		),
+// 	)
+
+// 	resp.Printer.Add(
+// 		goipp.MakeAttribute(
+// 			"printer-make-and-model",
+// 			goipp.TagText,
+// 			goipp.String("PiKul Virtual Printer"),
+// 		),
+// 	)
+
+// 	resp.Printer.Add(
+// 		goipp.MakeAttribute(
+// 			"printer-state",
+// 			goipp.TagEnum,
+// 			goipp.Integer(3),
+// 		),
+// 	)
+
+// 	resp.Printer.Add(
+// 		goipp.MakeAttribute(
+// 			"printer-state-reasons",
+// 			goipp.TagKeyword,
+// 			goipp.String("none"),
+// 		),
+// 	)
+
+// 	resp.Printer.Add(
+// 		goipp.MakeAttribute(
+// 			"document-format-default",
+// 			goipp.TagMimeType,
+// 			goipp.String("application/octet-stream"),
+// 		),
+// 	)
+
+// 	resp.Printer.Add(
+// 		goipp.MakeAttribute(
+// 			"charset-configured",
+// 			goipp.TagCharset,
+// 			goipp.String("utf-8"),
+// 		),
+// 	)
+
+// 	resp.Printer.Add(
+// 		goipp.MakeAttribute(
+// 			"charset-supported",
+// 			goipp.TagCharset,
+// 			goipp.String("utf-8"),
+// 		),
+// 	)
+
+// 	resp.Printer.Add(
+// 		goipp.MakeAttribute(
+// 			"natural-language-configured",
+// 			goipp.TagLanguage,
+// 			goipp.String("en"),
+// 		),
+// 	)
+
+// 	resp.Printer.Add(
+// 		goipp.MakeAttribute(
+// 			"generated-natural-language-supported",
+// 			goipp.TagLanguage,
+// 			goipp.String("en"),
+// 		),
+// 	)
+
+// 	resp.Printer.Add(
+// 		goipp.MakeAttribute(
+// 			"color-supported",
+// 			goipp.TagBoolean,
+// 			goipp.Boolean(false),
+// 		),
+// 	)
+
+// 	resp.Printer.Add(
+// 		goipp.MakeAttribute(
+// 			"copies-supported",
+// 			goipp.TagRange,
+// 			goipp.Range{
+// 				Lower: 1,
+// 				Upper: 999,
+// 			},
+// 		),
+// 	)
+
+// 	writeIPPResponse(w, resp)
+// }
+
 func handleGetPrinterAttributes(
 	w http.ResponseWriter,
 	r *http.Request,
@@ -200,121 +335,229 @@ func handleGetPrinterAttributes(
 
 	addOperationAttributes(resp)
 
-	resp.Printer.Add(
-		goipp.MakeAttribute(
-			"printer-uri-supported",
-			goipp.TagURI,
-			goipp.String(printerURI),
-		),
-	)
+	resp.Printer.Add(goipp.MakeAttribute(
+		"document-format-default",
+		goipp.TagMimeType,
+		goipp.String("application/octet-stream"),
+	))
 
-	resp.Printer.Add(
-		goipp.MakeAttribute(
-			"printer-name",
-			goipp.TagName,
-			goipp.String(printerName),
-		),
-	)
+	// resp.Printer.Add(goipp.MakeAttribute(
+	// 	"printer-uri-supported",
+	// 	goipp.TagURI,
+	// 	goipp.String(printerURI),
+	// ))
+	resp.Printer.Add(goipp.MakeAttribute(
+		"printer-uri-supported",
+		goipp.TagURI,
+		goipp.String("ipp://127.0.0.1:631/ipp/print"),
+	))
+	resp.Printer.Add(goipp.MakeAttribute(
+		"printer-name",
+		goipp.TagName,
+		goipp.String(printerName),
+	))
 
-	resp.Printer.Add(
-		goipp.MakeAttribute(
-			"printer-info",
-			goipp.TagText,
-			goipp.String("PiKul Virtual Printer"),
-		),
-	)
+	resp.Printer.Add(goipp.MakeAttribute(
+		"printer-info",
+		goipp.TagText,
+		goipp.String("PiKul Virtual Printer"),
+	))
 
-	resp.Printer.Add(
-		goipp.MakeAttribute(
-			"printer-location",
-			goipp.TagText,
-			goipp.String(""),
-		),
-	)
+	resp.Printer.Add(goipp.MakeAttribute(
+		"printer-location",
+		goipp.TagText,
+		goipp.String(""),
+	))
 
-	resp.Printer.Add(
-		goipp.MakeAttribute(
-			"printer-make-and-model",
-			goipp.TagText,
-			goipp.String("PiKul Virtual Printer"),
-		),
-	)
+	resp.Printer.Add(goipp.MakeAttribute(
+		"printer-make-and-model",
+		goipp.TagText,
+		goipp.String("PiKul Virtual Printer"),
+	))
 
-	resp.Printer.Add(
-		goipp.MakeAttribute(
-			"printer-state",
-			goipp.TagEnum,
-			goipp.Integer(3),
-		),
-	)
+	resp.Printer.Add(goipp.MakeAttribute(
+		"printer-more-info",
+		goipp.TagURI,
+		goipp.String(printerURI),
+	))
 
-	resp.Printer.Add(
-		goipp.MakeAttribute(
-			"printer-state-reasons",
-			goipp.TagKeyword,
-			goipp.String("none"),
-		),
-	)
+	resp.Printer.Add(goipp.MakeAttribute(
+		"printer-uuid",
+		goipp.TagURI,
+		goipp.String("urn:uuid:12345678-1234-1234-1234-123456789abc"),
+	))
 
-	resp.Printer.Add(
-		goipp.MakeAttribute(
-			"document-format-default",
-			goipp.TagMimeType,
-			goipp.String("application/octet-stream"),
-		),
-	)
+	resp.Printer.Add(goipp.MakeAttribute(
+		"printer-state",
+		goipp.TagEnum,
+		goipp.Integer(3),
+	))
 
-	resp.Printer.Add(
-		goipp.MakeAttribute(
-			"charset-configured",
-			goipp.TagCharset,
-			goipp.String("utf-8"),
-		),
-	)
+	resp.Printer.Add(goipp.MakeAttribute(
+		"printer-state-reasons",
+		goipp.TagKeyword,
+		goipp.String("none"),
+	))
 
-	resp.Printer.Add(
-		goipp.MakeAttribute(
-			"charset-supported",
-			goipp.TagCharset,
-			goipp.String("utf-8"),
-		),
-	)
+	resp.Printer.Add(goipp.Attribute{
+		Name: "ipp-versions-supported",
+		Values: goipp.Values{
+			{T: goipp.TagKeyword, V: goipp.String("1.1")},
+			{T: goipp.TagKeyword, V: goipp.String("2.0")},
+		},
+	})
 
-	resp.Printer.Add(
-		goipp.MakeAttribute(
-			"natural-language-configured",
-			goipp.TagLanguage,
-			goipp.String("en"),
-		),
-	)
+	resp.Printer.Add(goipp.Attribute{
+		Name: "document-format-supported",
+		Values: goipp.Values{
+			{T: goipp.TagMimeType, V: goipp.String("application/octet-stream")},
+			{T: goipp.TagMimeType, V: goipp.String("application/pdf")},
+			{T: goipp.TagMimeType, V: goipp.String("text/plain")},
+		},
+	})
 
-	resp.Printer.Add(
-		goipp.MakeAttribute(
-			"generated-natural-language-supported",
-			goipp.TagLanguage,
-			goipp.String("en"),
-		),
-	)
+	resp.Printer.Add(goipp.MakeAttribute(
+		"document-format-default",
+		goipp.TagMimeType,
+		goipp.String("text/plain"),
+		//goipp.String("application/octet-stream"),
+	))
 
-	resp.Printer.Add(
-		goipp.MakeAttribute(
-			"color-supported",
-			goipp.TagBoolean,
-			goipp.Boolean(false),
-		),
-	)
+	resp.Printer.Add(goipp.MakeAttribute(
+		"document-format-preferred",
+		goipp.TagMimeType,
+		goipp.String("application/octet-stream"),
+	))
 
-	resp.Printer.Add(
-		goipp.MakeAttribute(
-			"copies-supported",
-			goipp.TagRange,
-			goipp.Range{
-				Lower: 1,
-				Upper: 999,
-			},
-		),
-	)
+	resp.Printer.Add(goipp.MakeAttribute(
+		"charset-configured",
+		goipp.TagCharset,
+		goipp.String("utf-8"),
+	))
 
+	resp.Printer.Add(goipp.MakeAttribute(
+		"charset-supported",
+		goipp.TagCharset,
+		goipp.String("utf-8"),
+	))
+
+	resp.Printer.Add(goipp.MakeAttribute(
+		"natural-language-configured",
+		goipp.TagLanguage,
+		goipp.String("pl"),
+	))
+
+	resp.Printer.Add(goipp.MakeAttribute(
+		"generated-natural-language-supported",
+		goipp.TagLanguage,
+		goipp.String("pl"),
+	))
+
+	resp.Printer.Add(goipp.MakeAttribute(
+		"uri-authentication-supported",
+		goipp.TagKeyword,
+		goipp.String("none"),
+	))
+
+	resp.Printer.Add(goipp.MakeAttribute(
+		"uri-security-supported",
+		goipp.TagKeyword,
+		goipp.String("none"),
+	))
+
+	resp.Printer.Add(goipp.MakeAttribute(
+		"color-supported",
+		goipp.TagBoolean,
+		goipp.Boolean(false),
+	))
+
+	resp.Printer.Add(goipp.MakeAttribute(
+		"copies-supported",
+		goipp.TagRange,
+		goipp.Range{
+			Lower: 1,
+			Upper: 999,
+		},
+	))
+
+	resp.Printer.Add(goipp.Attribute{
+		Name: "media-supported",
+		Values: goipp.Values{
+			{T: goipp.TagKeyword, V: goipp.String("iso_a4_210x297mm")},
+			{T: goipp.TagKeyword, V: goipp.String("na_letter_8.5x11in")},
+		},
+	})
+
+	resp.Printer.Add(goipp.Attribute{
+		Name: "media-type-supported",
+		Values: goipp.Values{
+			{T: goipp.TagKeyword, V: goipp.String("stationery")},
+		},
+	})
+
+	resp.Printer.Add(goipp.MakeAttribute(
+		"printer-dns-sd-name",
+		goipp.TagName,
+		goipp.String(printerName),
+	))
+
+	resp.Printer.Add(goipp.MakeAttribute(
+		"printer-firmware-name",
+		goipp.TagName,
+		goipp.String("PiKul Virtual Printer"),
+	))
+
+	resp.Printer.Add(goipp.MakeAttribute(
+		"printer-firmware-string-version",
+		goipp.TagText,
+		goipp.String("1.0"),
+	))
+
+	resp.Printer.Add(goipp.MakeAttribute(
+		"printer-device-id",
+		goipp.TagText,
+		goipp.String("MFG:PiKul;MDL:Virtual Printer;CMD:PDF,RAW;"),
+	))
+
+	// resp.Printer.Add(goipp.MakeAttribute(
+	// 	"printer-is-accepting-jobs",
+	// 	goipp.TagBoolean,
+	// 	goipp.Boolean(true),
+	// ))
+
+	// resp.Printer.Add(goipp.MakeAttribute(
+	// 	"mopria-certified",
+	// 	goipp.TagBoolean,
+	// 	goipp.Boolean(false),
+	// ))
+
+	// resp.Printer.Add(goipp.MakeAttribute(
+	// 	"mopria_certified",
+	// 	goipp.TagBoolean,
+	// 	goipp.Boolean(false),
+	// ))
+
+	resp.Printer.Add(goipp.MakeAttribute(
+		"mopria-certified",
+		goipp.TagKeyword,
+		goipp.String("false"),
+	))
+
+	resp.Printer.Add(goipp.MakeAttribute(
+		"mopria_certified",
+		goipp.TagKeyword,
+		goipp.String("false"),
+	))
+
+	// resp.Printer.Add(goipp.MakeAttribute(
+	// 	"queued-job-count",
+	// 	goipp.TagInteger,
+	// 	goipp.Integer(0),
+	// ))
+
+	fmt.Println("----- IPP RESPONSE -----")
+	resp.Print(os.Stdout, true)
+	fmt.Println("-----------------------")
 	writeIPPResponse(w, resp)
 }
 
