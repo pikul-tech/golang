@@ -1,0 +1,112 @@
+package main
+
+import (
+	"fmt"
+	"io"
+	"net"
+	"net/http"
+	"os"
+	"time"
+)
+
+func handleConnection(conn net.Conn) {
+	defer conn.Close()
+
+	fmt.Println("Połączenie 9100:", conn.RemoteAddr())
+
+	filename := fmt.Sprintf("print_%s.bin", time.Now().Format("20060102_150405.000"))
+
+	file, err := os.Create(filename)
+	if err != nil {
+		fmt.Println("Błąd pliku:", err)
+		return
+	}
+	defer file.Close()
+
+	buf := make([]byte, 4096)
+
+	for {
+		n, err := conn.Read(buf)
+
+		if n > 0 {
+			data := buf[:n]
+
+			fmt.Printf("9100: odebrano %d bajtów\n", n)
+
+			_, _ = file.Write(data)
+		}
+
+		if err != nil {
+			if err != io.EOF {
+				fmt.Println("Błąd:", err)
+			}
+			break
+		}
+	}
+
+	fmt.Println("Rozłączono 9100:", conn.RemoteAddr())
+}
+
+func handleIPP(w http.ResponseWriter, r *http.Request) {
+	fmt.Println()
+	fmt.Println("========================================")
+	fmt.Println("IPP:", r.Method, r.URL)
+	fmt.Println("Klient:", r.RemoteAddr)
+	fmt.Println("Content-Type:", r.Header.Get("Content-Type"))
+	fmt.Println("Content-Length:", r.ContentLength)
+
+	data, err := io.ReadAll(r.Body)
+	if err != nil {
+		fmt.Println("Błąd odczytu IPP:", err)
+		http.Error(w, "read error", http.StatusInternalServerError)
+		return
+	}
+
+	fmt.Printf("IPP odebrano: %d bajtów\n", len(data))
+	fmt.Printf("IPP HEX:\n%x\n", data)
+
+	// Tutaj przygotowujemy odpowiedź IPP.
+	// Na razie pusty przykład:
+	response := []byte{}
+
+	w.Header().Set("Content-Type", "application/ipp")
+	w.WriteHeader(http.StatusOK)
+	_, _ = w.Write(response)
+
+	fmt.Println("IPP: wysłano odpowiedź:", len(response), "bajtów")
+	fmt.Println("========================================")
+}
+
+func main() {
+	// PORT 9100
+	listener, err := net.Listen("tcp4", "0.0.0.0:9100")
+	if err != nil {
+		fmt.Println("Nie można uruchomić 9100:", err)
+		return
+	}
+	defer listener.Close()
+
+	fmt.Println("Emulator drukarki nasłuchuje na porcie 9100...")
+
+	go func() {
+		for {
+			conn, err := listener.Accept()
+			if err != nil {
+				fmt.Println("Błąd 9100:", err)
+				continue
+			}
+
+			go handleConnection(conn)
+		}
+	}()
+
+	// PORT 631 - IPP
+	http.HandleFunc("/", handleIPP)
+
+	fmt.Println("Emulator IPP nasłuchuje na porcie 631...")
+
+	err = http.ListenAndServe("0.0.0.0:631", nil)
+	if err != nil {
+		fmt.Println("Nie można uruchomić 631:", err)
+	}
+}
