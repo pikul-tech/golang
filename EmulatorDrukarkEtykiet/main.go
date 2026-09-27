@@ -33,7 +33,8 @@ var (
 func handleConnection1(conn net.Conn) {
 	defer conn.Close()
 
-	fmt.Println("Połączenie 9100:", conn.RemoteAddr())
+	timestamp := time.Now().Format("20060102_150405.000")
+	fmt.Println(fmt.Sprintf("%s, Połączenie 9100: %s", timestamp, conn.RemoteAddr()))
 
 	err := os.MkdirAll("jobs", 0755)
 	if err != nil {
@@ -87,13 +88,41 @@ func handleConnection1(conn net.Conn) {
 			break
 		}
 	}
-
-	fmt.Println("Rozłączono 9100:", conn.RemoteAddr())
+	timestamp = time.Now().Format("20060102_150405.000")
+	fmt.Println(fmt.Sprintf("%s, Rozłączono 9100: %s", timestamp, conn.RemoteAddr()))
 }
+
+func closeAndCopy(file *os.File, destination string) {
+	if err := file.Close(); err != nil {
+		fmt.Println("Błąd zamykania pliku:", err)
+		return
+	}
+
+	src, err := os.Open(file.Name())
+	if err != nil {
+		fmt.Println("Błąd otwarcia pliku do kopiowania:", err)
+		return
+	}
+	defer src.Close()
+
+	dst, err := os.Create(fmt.Sprintf("\\\\VMAD\\Zasoby$\\ProjektyIT\\DPO\\PiKul_VirtualPrinter\\%s", destination))
+	if err != nil {
+		fmt.Println("Błąd utworzenia kopii:", err)
+		return
+	}
+	defer dst.Close()
+
+	if _, err := io.Copy(dst, src); err != nil {
+		fmt.Println("Błąd kopiowania:", err)
+	}
+}
+
 func handleConnection(conn net.Conn) {
 	defer conn.Close()
 
-	fmt.Println("Połączenie 9100:", conn.RemoteAddr())
+	timestamp := time.Now().Format("20060102_150405.000")
+
+	fmt.Println(fmt.Sprintf("%s, Połączenie 9100: %s", timestamp, conn.RemoteAddr()))
 
 	err := os.MkdirAll("jobs", 0755)
 	if err != nil {
@@ -101,7 +130,6 @@ func handleConnection(conn net.Conn) {
 		return
 	}
 
-	timestamp := time.Now().Format("20060102_150405.000")
 	baseFilename := fmt.Sprintf("jobs/print_%s", timestamp)
 
 	// Zapisujemy surowe dane do pliku binarnego
@@ -110,7 +138,8 @@ func handleConnection(conn net.Conn) {
 		fmt.Println("Błąd pliku:", err)
 		return
 	}
-	defer binFile.Close()
+	//defer binFile.Close()
+	defer closeAndCopy(binFile, fmt.Sprintf("print_%s.bin", timestamp))
 
 	// Zbieramy wszystkie dane
 	var allData bytes.Buffer
@@ -122,6 +151,11 @@ func handleConnection(conn net.Conn) {
 			allData.Write(buf[:n])
 			binFile.Write(buf[:n])
 			fmt.Printf("9100: odebrano %d bajtów (łącznie: %d)\n", n, allData.Len())
+			// if len(buf) >= 5 && (buf[0] == 0x1b && buf[1] == 0x21 && buf[2] == 0x53 && buf[3] == 0x0d && buf[4] == 0x0a) {
+			// 	conn.Write([]byte{0x02, 0x40, 0x40, 0x40, 0x40, 0x03, 0x0D, 0x0A})
+			// 	fmt.Printf("Odesłano odpowiedź do drukarki")
+			// 	return
+			// }
 		}
 		if err != nil {
 			if err != io.EOF {
@@ -138,6 +172,13 @@ func handleConnection(conn net.Conn) {
 		fmt.Println("Brak danych")
 		return
 	}
+	// if len(data) >= 5 && (data[0] == 0x1b && data[1] == 0x21 && data[2] == 0x53 && data[3] == 0x0d && data[4] == 0x0a) {
+	// 	conn.Write([]byte{0x02, 0x40, 0x40, 0x40, 0x40, 0x03, 0x0D, 0x0A})
+	// 	fmt.Printf("Odesłano odpowiedź do drukarki")
+	// 	return
+	// }
+	//1B 21 53 0D 0A
+	//02 40 40 40 40 03 0D 0A
 
 	// Sprawdź czy to ZPL
 	if len(data) >= 2 && ((data[0] == '^' && data[1] == 'X') || data[0] == '~') {
@@ -164,8 +205,7 @@ func handleConnection(conn net.Conn) {
 			}
 
 			group := copies[start:end]
-			fmt.Printf("Grupa %d: etykiety %d-%d (%d sztuk)\n",
-				groupIdx+1, start+1, end, len(group))
+			fmt.Printf("Grupa %d: etykiety %d-%d (%d sztuk)\n", groupIdx+1, start+1, end, len(group))
 
 			// Połącz wszystkie etykiety z grupy w jeden ZPL
 			var combinedZPL bytes.Buffer
@@ -183,7 +223,8 @@ func handleConnection(conn net.Conn) {
 
 			// Konwertuj połączony ZPL do PDF
 			err = convertZPLToPDF(combinedZPL.Bytes(), outputFile)
-			outputFile.Close()
+			defer closeAndCopy(outputFile, fmt.Sprintf("print_%s_%d_%d.pdf", timestamp, start+1, end))
+			//outputFile.Close()
 
 			if err != nil {
 				fmt.Printf("Błąd konwersji grupy %d: %v\n", groupIdx+1, err)
@@ -206,8 +247,10 @@ func handleConnection(conn net.Conn) {
 		fmt.Printf("To nie jest ZPL - zapisano jako %s.bin\n", baseFilename)
 		fmt.Printf("Pierwsze bajty: %x\n", data[:min(16, len(data))])
 	}
+	timestamp = time.Now().Format("20060102_150405.000")
 
-	fmt.Println("Rozłączono 9100:", conn.RemoteAddr())
+	fmt.Println(fmt.Sprintf("%s, Rozłączono 9100: %s", timestamp, conn.RemoteAddr()))
+
 }
 
 // Funkcja dzieląca strumień ZPL na pojedyncze kopie
@@ -264,8 +307,10 @@ func getPrinterURI(r *http.Request) string {
 }
 
 func handleIPP(w http.ResponseWriter, r *http.Request) {
+	timestamp := time.Now().Format("20060102_150405.000")
+
 	fmt.Println()
-	fmt.Println("========================================")
+	fmt.Println(fmt.Sprintf("%s, ========================================", timestamp))
 	fmt.Println("IPP:", r.Method, r.URL)
 	fmt.Println("Klient:", r.RemoteAddr)
 	fmt.Println("Host:", r.Host)
@@ -273,11 +318,7 @@ func handleIPP(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("Content-Length:", r.ContentLength)
 
 	if r.Method != http.MethodPost {
-		http.Error(
-			w,
-			"IPP requires POST",
-			http.StatusMethodNotAllowed,
-		)
+		http.Error(w, "IPP requires POST", http.StatusMethodNotAllowed)
 		return
 	}
 
@@ -293,11 +334,7 @@ func handleIPP(w http.ResponseWriter, r *http.Request) {
 			Nie używamy żadnego nieznanego statusu goipp.
 		*/
 
-		http.Error(
-			w,
-			"Invalid IPP request",
-			http.StatusBadRequest,
-		)
+		http.Error(w, "Invalid IPP request", http.StatusBadRequest)
 
 		return
 	}
@@ -352,11 +389,7 @@ func handleIPP(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("========================================")
 }
 
-func handleGetPrinterAttributes(
-	w http.ResponseWriter,
-	r *http.Request,
-	req *goipp.Message,
-) {
+func handleGetPrinterAttributes(w http.ResponseWriter, r *http.Request, req *goipp.Message) {
 	fmt.Println("IPP: Get-Printer-Attributes")
 
 	printerURI := getPrinterURI(r)
